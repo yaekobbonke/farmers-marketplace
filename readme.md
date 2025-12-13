@@ -10,7 +10,7 @@ tsconfig.json file created
 Implemented Authentication logic
     npm install bcrypt jsonwebtoken
     npm install -D @types/bcrypt @types/jsonwebtoken
-npx tsc --init       //creates tsconfig.json file
+npx tsc --init       //creates tsconfig.json file go
 
 Product CRUD Endpoints
 
