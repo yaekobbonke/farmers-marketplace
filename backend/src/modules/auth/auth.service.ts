@@ -7,8 +7,6 @@ import { email, input, json } from "zod";
 import { error } from "console";
 
 
-
-
 export class AuthService{
     static async register(input:RegisterInput) {
         const exists = await prisma.user.findUnique({
@@ -18,7 +16,6 @@ export class AuthService{
             return { 
                 status: 409, message: "User already registered" 
             };
-
         }
         
         const hashed = await hashPassword(input.password);
@@ -50,6 +47,7 @@ export class AuthService{
                 message: "Email not registered"
             }
         }
+
         const valid = await comparePassword(user.password, input.password)
         if(!valid){
             return {
@@ -59,7 +57,8 @@ export class AuthService{
         const token = signToken({userId: user.id});
 
         return {
-            message: "Login successful"
+            message: "Login successful",
+            token
         }
     }
 }
