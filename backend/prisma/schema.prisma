@@ -1,0 +1,185 @@
+// --------------------- Generator ---------------------
+generator client {
+  provider = "prisma-client-js"
+}
+
+// --------------------- Datasource ---------------------
+datasource db {
+  provider = "postgresql"
+}
+
+// --------------------- Users ---------------------
+model User {
+  id              Int       @id @default(autoincrement())
+  first_name      String
+  last_name       String
+  email           String    @unique
+  phone           String?    @unique
+  location        String?
+  password        String
+  role            Role @default(FARMER)
+  products        Product[]
+  cart            Cart?
+  orders          Order[]
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([location])
+  @@index([email])
+  @@index([phone])
+}
+
+enum Role {
+  FARMER
+  BUYER
+  ADMIN
+}
+
+// --------------------- Categories ---------------------
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// --------------------- Products ---------------------
+model Product {
+  id               Int              @id @default(autoincrement())
+  name             String
+  type             ProductType
+  quantity         Decimal          @db.Decimal(10,2)
+  unit             String
+  price            Decimal          @db.Decimal(10,2)
+  description      String?
+  status           ProductStatus    @default(AVAILABLE)
+  farmer           User             @relation(fields: [farmerId], references: [id])
+  farmerId         Int
+  categoryId       Int?
+  category         Category?        @relation(fields: [categoryId], references: [id])
+  tags             String?          // for semantic search embeddings
+  priceHistories   PriceHistory[]
+  pricePredictions PricePrediction[]
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([name])
+  @@index([status])
+}
+
+enum ProductType {
+  CROP
+  LIVESTOCK
+}
+
+enum ProductStatus {
+  AVAILABLE
+  SOLD_OUT
+}
+
+// --------------------- Price History ---------------------
+model PriceHistory {
+  id        Int      @id @default(autoincrement())
+  product   Product  @relation(fields: [productId], references: [id])
+  productId Int
+  price     Decimal  @db.Decimal(10,2)
+  date      DateTime @default(now())
+}
+
+// --------------------- AI Price Predictions ---------------------
+model PricePrediction {
+  id             Int      @id @default(autoincrement())
+  product        Product  @relation(fields: [productId], references: [id])
+  productId      Int
+  predictedPrice Decimal  @db.Decimal(10,2)
+  predictedDate  DateTime
+  createdAt      DateTime @default(now())
+}
+
+// --------------------- Cart ---------------------
+model Cart {
+  id        Int       @id @default(autoincrement())
+  buyer     User      @relation(fields: [buyerId], references: [id])
+  buyerId   Int       @unique
+  items     CartItem[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// --------------------- Cart Items ---------------------
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  cartId    Int
+  product   Product  @relation(fields: [productId], references: [id])
+  productId Int
+  quantity  Decimal  @db.Decimal(10,2)
+  unitPrice Decimal  @db.Decimal(10,2)
+}
+
+// --------------------- Orders ---------------------
+model Order {
+  id              Int         @id @default(autoincrement())
+  buyer           User        @relation(fields: [buyerId], references: [id])
+  buyerId         Int
+  orderItems      OrderItem[]
+  totalAmount     Decimal     @db.Decimal(10,2)
+  payment         Payment?
+  status          OrderStatus @default(PENDING)
+  deliveryAddress String?
+  deliveryStatus  DeliveryStatus?
+  notes           String?     // buyer instructions
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+}
+
+// --------------------- Order Items ---------------------
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  order     Order    @relation(fields: [orderId], references: [id])
+  orderId   Int
+  product   Product  @relation(fields: [productId], references: [id])
+  productId Int
+  quantity  Decimal  @db.Decimal(10,2)
+  unitPrice Decimal  @db.Decimal(10,2)
+}
+
+// --------------------- Payments ---------------------
+model Payment {
+  id        Int           @id @default(autoincrement())
+  orderId   Int           @unique
+  order     Order         @relation(fields: [orderId], references: [id])
+  amount    Decimal       @db.Decimal(10,2)
+  method    PaymentMethod
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+}
+
+enum PaymentMethod {
+  TELEBIRR
+  MPESA
+  CASH
+}
+
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+  PENDING
+  REFUNDED
+}
