@@ -49,26 +49,36 @@ model Category {
 model Product {
   id               Int              @id @default(autoincrement())
   name             String
+  description      String?
   type             ProductType
   quantity         Decimal          @db.Decimal(10,2)
   unit             String
   price            Decimal          @db.Decimal(10,2)
-  description      String?
   status           ProductStatus    @default(AVAILABLE)
-  farmer           User             @relation(fields: [farmerId], references: [id])
+
   farmerId         Int
+  farmer           User             @relation(fields: [farmerId], references: [id])
+
   categoryId       Int?
   category         Category?        @relation(fields: [categoryId], references: [id])
-  tags             String?          // for semantic search embeddings
+
+  tags             String?
+  embeddingId      String?
+
+  latitude         Float?
+  longitude        Float?
+
   priceHistories   PriceHistory[]
   pricePredictions PricePrediction[]
   cartItems        CartItem[]
   orderItems       OrderItem[]
+
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
   @@index([name])
   @@index([status])
+  @@index([categoryId, status])
 }
 
 enum ProductType {
